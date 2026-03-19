@@ -127,7 +127,7 @@ You are a senior ad creative director.
 Convert this into a HIGH QUALITY Instagram ad image prompt.
 
 Requirements:
-- 4:5 format (1080x1350)
+- 4:5 format (1080x1440)
 - realistic commercial photography
 - strong typography
 - clear composition
