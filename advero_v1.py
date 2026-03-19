@@ -5,7 +5,6 @@ import zipfile
 import requests
 import base64
 from PIL import Image, ImageDraw, ImageFont
-from dotenv import load_dotenv
 import json
 
 import warnings
