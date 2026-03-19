@@ -14,9 +14,6 @@ from langchain_groq import ChatGroq
 from langchain_core.prompts import PromptTemplate
 from together import Together
 
-# ---------------- ENV ----------------
-load_dotenv()
-
 # ---------------- CONFIG ----------------
 st.set_page_config(page_title="AdLume.ai", layout="centered")
 
