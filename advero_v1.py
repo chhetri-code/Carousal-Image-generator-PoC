@@ -119,7 +119,7 @@ st.caption("Create ready-to-post ad images with captions for your business in se
 
 # ---------------- LLM ----------------
 llm = ChatGroq(
-    api_key=os.getenv("GROK_API_KEY"),
+    api_key=st.secrets["GROK_API_KEY"],
     model="llama-3.3-70b-versatile",
     temperature=0.6
 )
@@ -159,7 +159,7 @@ enhance_chain = enhance_template | llm
 caption_chain = caption_template | llm
 
 # ---------------- IMAGE CLIENT ----------------
-client = Together(api_key=os.getenv("TOGETHER_API_KEY"))
+client = Together(api_key=st.secrets["TOGETHER_API_KEY"])
 
 # ---------------- HELPERS ----------------
 def enhance_prompt(base_prompt):
