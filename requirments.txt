@@ -1,0 +1,6 @@
+streamlit
+pillow
+langchain
+langchain-groq
+together
+requests
