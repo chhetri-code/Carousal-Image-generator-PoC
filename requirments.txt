@@ -1,4 +1,5 @@
 streamlit
+groq
 pillow
 langchain
 langchain-groq
