@@ -257,7 +257,7 @@ with st.container():
     business_name = st.text_input("Business Name")
     website = st.text_input("Website")
     location = st.text_input("Location")
-    
+    promo = st.toggle("Add automatic offers")
     generate = st.button("🪄 Create Ads!", type = "primary", width = "stretch")
 
     st.markdown('</div>', unsafe_allow_html=True)
@@ -281,6 +281,7 @@ if generate:
         Business Name: {business_name}
         Website: {website}
         Location: {location}
+        Promo: {promo}
         """
 
         caption = generate_caption(global_context)
