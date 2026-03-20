@@ -309,14 +309,14 @@ with st.sidebar:
         st.write("""
         AdLume.ai helps you turn simple ideas into ready to post **scroll-stopping Instagram ads**.
 
-        🎯 Built for:
+        🎯 *Built for:*
         - Founders & startups  
         - Small businesses  
         - Marketers & agencies  
         - Creators   
         """)
         st.info("""
-        ⚡ What you get:
+        ⚡ *What you get:*
         - Idea to ad in seconds  
         - Smart prompt enhancement (no effort needed)  
         - High-quality, realistic ad creatives  
@@ -327,12 +327,12 @@ with st.sidebar:
         st.write("""
         Built for creators who want **SPEED + RELIABILITY**.
 
-        ### Free
+        ### *Free*
         - Limited daily generations  
         - Standard quality outputs  
         - Core features  
 
-        ### Go Pro 
+        ### *Go Pro* 
         - 30+ generations (scalable)  
         - Advanced prompt optimization  
         - Premium ad styles & templates  
@@ -348,12 +348,12 @@ with st.sidebar:
     # ABOUT CHHETRI
     with st.expander("👤 Chhetri"):
         st.write("""
-        Chhetri builds simple & effective AI tools for **marketing, creativity, and productivity**.
-
-        Focus:
+        Chhetri builds simple yet effective AI tools for **productivity, creativity, and data-driven decision making**.
+        **Focus:**
         - AI × creativity  
+        - Data science & analytics  
         - Digital products  
-        - Real-world utility  
+        - Real-world utility 
         """)
 
     st.markdown("---")
