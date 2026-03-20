@@ -298,7 +298,7 @@ with st.container():
 with st.sidebar:
     st.title("✨ AdLume.ai")
 
-    st.markdown("Ready-to-post high-converting Instagram ads in seconds.")
+    st.markdown("Ready-to-post high-converting Instagram Ads in seconds.")
 
     with st.expander("🔐 Login/Register"):
         st.write("Save your ads, access history & unlock Pro features.")
