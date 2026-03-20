@@ -466,7 +466,7 @@ if generate:
 
 # -------- FOOTER --------
 st.markdown("""
-<div style='text-align:center; font-size:13px; color:gray; margin-top:30px;'>
+<div style='text-align:center; font-size:12px; color:gray; margin-top:30px;'>
 Made in 🇮🇳 with ❤️ by Chhetri
 </div>
 """, unsafe_allow_html=True)
