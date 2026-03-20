@@ -245,7 +245,7 @@ def create_zip(images):
 with st.container():
     st.markdown('<div class="card">', unsafe_allow_html=True)
 
-    prompt = st.text_area("Describe your promotion")
+    prompt = st.text_area("Ad details (include promos you are running)")
 
     business_type = st.radio(
         "Business Type",
