@@ -150,6 +150,7 @@ Requirements:
 - Visual focus: Product or service central, clear branding
 - Keep writeup on the pictures at the minimal side
 - Do not add any offers if users have not specified
+- If promo = True, then add appropriate offers
 
 Output format:
 - Headline: [Insert exact short headline text]
