@@ -272,8 +272,7 @@ with st.sidebar:
     # ABOUT APP
     with st.expander("ℹ️ AdLume.ai"):
         st.write("""
-        AdLume.ai helps you turn simple ideas into **scroll-stopping Instagram ads** 
-        with strong visuals and high-converting copy — ready to post.
+        AdLume.ai helps you turn simple ideas into ready to post **scroll-stopping Instagram ads**.
 
         🎯 Built for:
         - Founders & startups  
@@ -282,7 +281,7 @@ with st.sidebar:
         - Creators  
 
         ⚡ What you get:
-        - Idea to complete ad in seconds  
+        - Idea to ad in seconds  
         - Smart prompt enhancement (no effort needed)  
         - High-quality, realistic ad creatives  
         - Faster content, better conversions  
