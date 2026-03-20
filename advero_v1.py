@@ -358,6 +358,7 @@ with st.sidebar:
         st.info(
         """
         📫 **Contact**
+        
         📧 [Email](mailto:chhetri.code@gmail.com)  
         💼 [LinkedIn](www.linkedin.com/in/prashant-kumar-chhetri)
         """)
