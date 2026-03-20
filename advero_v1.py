@@ -249,7 +249,7 @@ with st.container():
 
     business_type = st.radio(
         "Business Type",
-        ["Food", "Lifestyle", "Retail", "Beauty & Cosmetics", "Healthcare"],
+        ["Food & Lifestyle", "Retail", "Beauty & Cosmetics", "Healthcare"],
         horizontal=True
     )
 
@@ -330,6 +330,10 @@ with st.sidebar:
         """)
 
         st.button("🚀 Upgrade to Pro", use_container_width=True)
+
+    # History 
+    with st.expander("🕘 Recent Ads"):
+        st.caption("No ads generated yet.")
 
     # ABOUT CHHETRI
     with st.expander("👤 Chhetri"):
