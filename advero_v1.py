@@ -327,12 +327,12 @@ with st.sidebar:
         st.write("""
         Built for creators who want to win with **SPEED + RELIABILITY**.
 
-        ### **Free**
+        🔰 **Free**
         - Limited daily generations  
         - Standard quality outputs  
         - Core features  
 
-        ### **Go Pro** 
+        👑 **Go Pro** 
         - 30+ generations (scalable)  
         - Advanced prompt optimization  
         - Premium ad styles & templates  
@@ -344,21 +344,26 @@ with st.sidebar:
 
         st.button("🚀 Unlock Pro", use_container_width=True)
 
-
     # ABOUT CHHETRI
-    with st.expander("👤 Chhetri"):
+    with st.expander("👤 About Me"):
         st.write("""
         Chhetri builds simple yet effective AI tools for **productivity, creativity, and data-driven decision making**.
-        
-        **Focus:**
+
+        **📌Focus:**
         - AI × creativity  
         - Data science & analytics  
         - Digital products  
         - Real-world utility 
         """)
-
+        st.info(
+        """
+        📫 **Contact**
+        📧 [Email](mailto:chhetri.code@gmail.com)  
+        💼 [LinkedIn](www.linkedin.com/in/prashant-kumar-chhetri)
+        """)
     st.markdown("---")
     st.caption("Made in 🇮🇳 with ❤️ by Chhetri")
+
     
 # ---------------- GENERATION ----------------
 if generate:
