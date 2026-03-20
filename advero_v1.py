@@ -300,6 +300,10 @@ with st.sidebar:
 
     st.markdown("Create high-converting Instagram ads in seconds.")
 
+    with st.expander("🔐 Login/Register"):
+        st.write("Save your ads, access history & unlock Pro features.")
+        st.info("Coming Soon 🚧")
+
     # ABOUT APP
     with st.expander("ℹ️ AdLume.ai"):
         st.write("""
@@ -309,20 +313,18 @@ with st.sidebar:
         - Founders & startups  
         - Small businesses  
         - Marketers & agencies  
-        - Creators  
-
+        - Creators   
+        """)
+        st.info("""
         ⚡ What you get:
         - Idea to ad in seconds  
         - Smart prompt enhancement (no effort needed)  
         - High-quality, realistic ad creatives  
-        - Faster content, better conversions  
-
-        ---
-        """)
+        - Faster content, better conversions """)
 
     # PRICING
     with st.expander("💰 Pricing"):
-        st.markdown("""
+        st.write("""
         Built for creators who want **SPEED + RELIABILITY**.
 
         ### Free
@@ -330,21 +332,18 @@ with st.sidebar:
         - Standard quality outputs  
         - Core features  
 
-        ### Pro (Coming Soon 🚀)
-        - More generations (scalable)  
+        ### Go Pro 
+        - 30+ generations (scalable)  
         - Advanced prompt optimization  
         - Premium ad styles & templates  
-        - Faster results  
+        - All free features 
         - Priority support  
-
-        ---
+        """)
+        st.info("""Coming Soon 🚧
         """)
 
-        st.button("🚀 Upgrade to Pro", use_container_width=True)
+        st.button("🚀 Unlock Pro", use_container_width=True)
 
-    # History 
-    with st.expander("🕘 Recent Ads"):
-        st.caption("No ads generated yet.")
 
     # ABOUT CHHETRI
     with st.expander("👤 Chhetri"):
@@ -355,12 +354,11 @@ with st.sidebar:
         - AI × creativity  
         - Digital products  
         - Real-world utility  
-        ---
         """)
 
     st.markdown("---")
     st.caption("Made in 🇮🇳 with ❤️ by Chhetri")
-
+    
 # ---------------- GENERATION ----------------
 if generate:
 
