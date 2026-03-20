@@ -360,7 +360,7 @@ with st.sidebar:
         📫 **Contact**
         
         📧 [Email](mailto:chhetri.code@gmail.com)  
-        💼 [LinkedIn](www.linkedin.com/in/prashant-kumar-chhetri)
+        💼 [LinkedIn](https://www.linkedin.com/in/prashant-kumar-chhetri)
         """)
     st.markdown("---")
     st.caption("Made in 🇮🇳 with ❤️ by Chhetri")
