@@ -247,10 +247,20 @@ with st.container():
 
     prompt = st.text_area("Ad details (include promos you are running)")
 
-    business_type = st.radio(
+    business_type = st.selectbox(
         "Business Type",
-        ["Food & Lifestyle", "Retail", "Beauty & Cosmetics", "Healthcare"],
-        horizontal=True
+        [
+            "🍔 Food & Dining",
+            "🛍️ Retail & E-commerce",
+            "💄 Beauty & Cosmetics",
+            "🏋️ Fitness & Gym",
+            "🏥 Healthcare & Wellness",
+            "🏨 Hospitality & Hotels",
+            "🎓 Education & Coaching",
+            "💼 Professional Services",
+            "📱 Tech & Startups",
+            "🎟️ Events & Entertainment"
+        ]
     )
 
     tone = st.selectbox(
@@ -272,8 +282,9 @@ with st.container():
         "🌈 Bright & Colorful",
         "🖤 Dark Premium",
         "🏝 Lifestyle Aesthetic",
-        "🎉 Festive & Fun"
-    ])
+        "🪔 Festive & Fun"
+    ]
+    )
 
     business_name = st.text_input("Business Name")
     website = st.text_input("Website")
