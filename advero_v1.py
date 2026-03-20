@@ -253,7 +253,27 @@ with st.container():
         horizontal=True
     )
 
-    theme = st.selectbox("Theme", ["Modern", "Professional", "Trendy", "Romantic", "Motivational", "Desi", "Festival"])
+    tone = st.selectbox(
+        "Ad Style",
+        [
+            "🔥 High Converting",
+            "💎 Luxury Brand",
+            "😎 Gen-Z Viral",
+            "📈 Direct Response",
+            "🧠 Emotional Story"
+        ]
+    )
+
+    theme = st.selectbox(
+    "Visual Style",
+    [
+        "📸 Realistic Photography",
+        "🎨 Minimal Clean",
+        "🌈 Bright & Colorful",
+        "🖤 Dark Premium",
+        "🏝 Lifestyle Aesthetic",
+        "🎉 Festive & Fun"
+    ])
 
     business_name = st.text_input("Business Name")
     website = st.text_input("Website")
@@ -332,7 +352,7 @@ if generate:
     if not prompt:
         with st.container():
             st.markdown('<div class="card">', unsafe_allow_html=True)
-            st.warning("⚠️ Provide promotion description.")
+            st.warning("⚠️ Describe your Idea!")
             st.markdown('</div>', unsafe_allow_html=True)
 
     else:
@@ -341,6 +361,7 @@ if generate:
         global_context = f"""
         Promotion: {prompt}
         Business Type: {business_type}
+        Tone: {tone}
         Theme: {theme}
         Business Name: {business_name}
         Website: {website}
@@ -386,7 +407,7 @@ if generate:
         with st.container():
             st.markdown('<div class="card">', unsafe_allow_html=True)
 
-            st.markdown("### 🎉 Marketing Package is Ready!")
+            st.markdown("### 🎉 Your marketing Package is Ready!")
 
             st.markdown("#### 📢 Caption")
             st.info(caption)
