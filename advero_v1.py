@@ -263,6 +263,70 @@ with st.container():
 
     st.markdown('</div>', unsafe_allow_html=True)
 
+
+with st.sidebar:
+    st.title("✨ AdLume.ai")
+
+    st.markdown("Create high-converting Instagram ads in seconds.")
+
+    # ABOUT APP
+    with st.expander("ℹ️ AdLume.ai"):
+        st.write("""
+        AdLume.ai helps you turn simple ideas into **scroll-stopping Instagram ads** 
+        with strong visuals and high-converting copy — ready to post.
+
+        🎯 Built for:
+        - Founders & startups  
+        - Small businesses  
+        - Marketers & agencies  
+        - Creators  
+
+        ⚡ What you get:
+        - Idea to complete ad in seconds  
+        - Smart prompt enhancement (no effort needed)  
+        - High-quality, realistic ad creatives  
+        - Faster content, better conversions  
+
+        ---
+        """)
+
+    # PRICING
+    with st.expander("💰 Pricing"):
+        st.markdown("""
+        Built for creators who want **SPEED + RELIABILITY**.
+
+        ### Free
+        - Limited daily generations  
+        - Standard quality outputs  
+        - Core features  
+
+        ### Pro (Coming Soon 🚀)
+        - More generations (scalable)  
+        - Advanced prompt optimization  
+        - Premium ad styles & templates  
+        - Faster results  
+        - Priority support  
+
+        ---
+        """)
+
+        st.button("🚀 Upgrade to Pro", use_container_width=True)
+
+    # ABOUT CHHETRI
+    with st.expander("👤 Chhetri"):
+        st.write("""
+        Chhetri builds simple & effective AI tools for **marketing, creativity, and productivity**.
+
+        Focus:
+        - AI × creativity  
+        - Digital products  
+        - Real-world utility  
+        ---
+        """)
+
+    st.markdown("---")
+    st.caption("Made in 🇮🇳 with ❤️ by Chhetri")
+
 # ---------------- GENERATION ----------------
 if generate:
 
