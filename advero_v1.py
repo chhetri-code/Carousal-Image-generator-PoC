@@ -253,7 +253,7 @@ with st.container():
             "🍔 Food & Dining",
             "🛍️ Retail & E-commerce",
             "💄 Beauty & Cosmetics",
-            "🏋️ Fitness & Gym",
+            "🏋️ Fitness & Lifestyle",
             "🏥 Healthcare & Wellness",
             "🏨 Hospitality & Hotels",
             "🎓 Education & Coaching",
