@@ -106,12 +106,27 @@ input, textarea {
     color: #6b7280;
     margin-top: 30px;
 }
+
+.stCardContainer {
+    background: #ffffff;
+    padding: 18px;
+    border-radius: 16px;
+    box-shadow: 0px 6px 18px rgba(0,0,0,0.15);
+    margin-bottom: 16px;
+}
+.card-container {
+    background: #ffffff;
+    padding: 18px;
+    border-radius: 16px;
+    box-shadow: 0px 6px 18px rgba(0,0,0,0.15);
+    margin-bottom: 16px;
+}
 </style>
 """, unsafe_allow_html=True)
 
 # ---------------- TITLE ----------------
 st.title("✨ AdLume.ai")
-st.caption("Create ready-to-post ad images with captions for your business in seconds!")
+st.caption("Create ready-to-post Insta ADs with captions in seconds!")
 
 # ---------------- LLM ----------------
 llm = ChatGroq(
@@ -122,18 +137,33 @@ llm = ChatGroq(
 
 # ---------------- PROMPTS ----------------
 enhance_template = PromptTemplate.from_template("""
-You are a senior ad creative director.
-
-Convert this into a HIGH QUALITY Instagram ad image prompt.
+You are a senior ad creative director. Create a visually stunning Instagram ad image.
 
 Requirements:
-- 4:5 format (1080x1440)
-- realistic commercial photography
-- strong typography
-- clear composition
-- visually rich and conversion focused
-- No garbage text overlay
-- Keep prompts concise and precise
+- Aspect ratio: 4:5 (1080x1440)
+- Style: Realistic commercial photography, premium and professional
+- Composition: Clear, focused, visually rich, conversion-oriented
+- Text overlay: Include exact ad text on the image (headline, subtext, CTA)
+- Typography: Strong, modern, highly legible, only text that fits naturally in the image
+- Avoid clutter: Only essential and readable text
+- Mood/Lighting: Bright, high-quality lighting, attention-grabbing
+- Visual focus: Product or service central, clear branding
+- Keep writeup on the pictures at the minimal side
+- Do not add any offers if users have not specified
+
+Output format:
+- Headline: [Insert exact short headline text]
+- Subtext: [Insert concise secondary message]
+- CTA: [Insert clear call-to-action text]
+- Background & style: [Describe realistic background, props, context for the product/service]
+- Text placement: [Specify where headline, subtext, CTA appear in the composition]
+
+Example:
+Headline: "Flat 30% Off All Juices!"
+Subtext: "Freshly squeezed sugarcane & fruit juices daily."
+CTA: "Order Now"
+Background & style: "Bright, modern juice bar, close-up on glass with condensation, warm natural lighting."
+Text placement: "Headline at top center, subtext below product, CTA at bottom in contrasting button-style typography."
 
 Base Input:
 {base_prompt}
@@ -145,7 +175,7 @@ Write ONE engaging Instagram caption for a carousel post.
 - Hook in first line
 - CTA in last line
 - Include 3-5 relevant hashtags
-- Keep it concise and natural
+- Keep it concise, human sounding and natural
 
 Context:
 {context}
@@ -218,17 +248,17 @@ with st.container():
 
     business_type = st.radio(
         "Business Type",
-        ["Restaurant", "Gym", "Supermarket"],
+        ["Food", "Lifestyle", "Retail", "Beauty & Cosmetics", "Healthcare"],
         horizontal=True
     )
 
-    theme = st.selectbox("Theme", ["Modern", "Festive"])
+    theme = st.selectbox("Theme", ["Modern", "Professional", "Trendy", "Romantic", "Motivational", "Desi", "Festival"])
 
     business_name = st.text_input("Business Name")
     website = st.text_input("Website")
     location = st.text_input("Location")
     
-    generate = st.button("🪄 Create!", type = "primary", width = "stretch")
+    generate = st.button("🪄 Create Ads!", type = "primary", width = "stretch")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
