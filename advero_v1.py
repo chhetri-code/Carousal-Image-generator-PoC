@@ -125,7 +125,7 @@ input, textarea {
 """, unsafe_allow_html=True)
 
 # ---------------- TITLE ----------------
-st.title("✨ AdLume.ai")
+st.title("✨ AdLume.aii")
 st.write("Ready-to-post high-converting Instagram Ads in seconds!")
 
 # ---------------- LLM ----------------
