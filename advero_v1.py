@@ -126,7 +126,7 @@ input, textarea {
 
 # ---------------- TITLE ----------------
 st.title("✨ AdLume.ai")
-st.caption("Create ready-to-post Insta ADs with captions in seconds!")
+st.caption("Create ready-to-post high-converting Instagram Ads in seconds!")
 
 # ---------------- LLM ----------------
 llm = ChatGroq(
