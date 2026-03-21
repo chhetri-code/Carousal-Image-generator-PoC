@@ -496,9 +496,17 @@ AdLume.ai turns simple ideas into **scroll-stopping Instagram ads**.
 
         with st.expander("💰 Pricing"):
             st.write("""
-🔰 **Free** - Limited daily generations, core features.
+        🔰 **Free**
+        - Limited daily generations  
+        - Standard quality outputs  
+        - Core features  
 
-👑 **Pro** - 30+ generations, advanced optimisation, premium styles, priority support.
+        👑 **Go Pro** 
+        - 30+ generations (scalable)  
+        - Advanced prompt optimization  
+        - Premium ad styles & templates  
+        - All free features 
+        - Priority support  
 """)
             st.info("Coming Soon 🚧")
             st.button("🚀 Unlock Pro", use_container_width=True)
