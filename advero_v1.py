@@ -646,10 +646,14 @@ def run_generation(inputs: AdInputs) -> None:
     for i, structure in enumerate(SLIDE_STRUCTURES, 1):
         base_prompt = f"{context}\nObjective: {structure}"
         st.markdown(f"#### Slide {i}")
-        st.write("**Base Prompt**");    st.code(base_prompt)
+        st.write("**Base Prompt**")
+        st.text_area("base_prompt", base_prompt, height=200, disabled=True,
+                     label_visibility="collapsed", key=f"base_{i}")
 
         enhanced = enhance_prompt(base_prompt)
-        st.write("**Enhanced Prompt**"); st.code(enhanced)
+        st.write("**Enhanced Prompt**")
+        st.text_area("enhanced_prompt", enhanced, height=200, disabled=True,
+                     label_visibility="collapsed", key=f"enhanced_{i}")
         st.session_state.prompt_log.append((base_prompt, enhanced))
 
         with st.spinner(f"Generating Slide {i}…"):
