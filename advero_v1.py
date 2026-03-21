@@ -247,6 +247,7 @@ Constraints:
 - If Promo Details are in the brief, include the exact promo wording as the headline text.
 - Typography must look professionally designed — clean, high contrast, legible.
 - Make design conversion oriented.
+- Leave space for additional text that can be overlayed by user.
 
 Base Input:
 {base_prompt}
