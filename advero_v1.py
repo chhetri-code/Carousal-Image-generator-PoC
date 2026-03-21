@@ -13,6 +13,7 @@ Improvements over original:
   • Sidebar factored into render_sidebar()
   • Input form factored into render_input_form()
   • Output section factored into render_output()
+  • Copy-to-clipboard button added below caption
 """
 
 from __future__ import annotations
@@ -541,6 +542,53 @@ def render_input_form() -> Optional[AdInputs]:
     )
 
 
+def render_copy_caption_button(caption: str) -> None:
+    """Renders an HTML copy-to-clipboard button for the caption."""
+    # Safely escape the caption for embedding in JS
+    escaped = (
+        caption
+        .replace("\\", "\\\\")
+        .replace("`", "\\`")
+        .replace("$", "\\$")
+    )
+    st.components.v1.html(
+        f"""
+        <div style="margin-top: 4px; margin-bottom: 4px;">
+            <button id="copyBtn" onclick="copyCaption()" style="
+                background: linear-gradient(90deg, #ff7a18, #22c55e);
+                color: white;
+                border: none;
+                border-radius: 10px;
+                padding: 10px 20px;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+                width: 100%;
+                font-family: sans-serif;
+                transition: opacity 0.2s;
+            ">📋 Copy Caption</button>
+        </div>
+        <script>
+            function copyCaption() {{
+                const caption = `{escaped}`;
+                navigator.clipboard.writeText(caption).then(() => {{
+                    const btn = document.getElementById('copyBtn');
+                    btn.textContent = '✅ Copied to clipboard!';
+                    btn.style.background = '#15803d';
+                    setTimeout(() => {{
+                        btn.textContent = '📋 Copy Caption';
+                        btn.style.background = 'linear-gradient(90deg, #ff7a18, #22c55e)';
+                    }}, 2000);
+                }}).catch(() => {{
+                    alert('Copy failed. Please select and copy the caption manually.');
+                }});
+            }}
+        </script>
+        """,
+        height=52,
+    )
+
+
 def render_output() -> None:
     if not (st.session_state.generated and st.session_state.images_bytes):
         return
@@ -550,6 +598,7 @@ def render_output() -> None:
         st.markdown("### 🎉 Your Marketing Package is Ready!")
         st.markdown("#### 📢 Caption")
         st.info(st.session_state.caption)
+        render_copy_caption_button(st.session_state.caption)  # ← copy button
         st.markdown('</div>', unsafe_allow_html=True)
 
     with st.container():
