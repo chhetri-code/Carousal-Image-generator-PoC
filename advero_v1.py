@@ -1,26 +1,26 @@
 """
-AdLume.ai — Optimized
-=====================
-Improvements over original:
-  • @st.cache_resource  – LLM / API clients created once, not per-run
-  • @st.cache_data      – vision analysis cached per (image bytes, count)
-  • Typed dataclasses   – SlideSpec replaces ad-hoc string concatenation
-  • Centralised session-state init (init_session_state)
-  • Specific exception handling instead of bare `except`
-  • Dead CSS removed; variables-driven palette
-  • Logo hint / product context injected once, not duplicated
-  • ZIP creation uses BytesIO properly (no unnecessary copies)
-  • Sidebar factored into render_sidebar()
-  • Input form factored into render_input_form()
-  • Output section factored into render_output()
-  • Copy-to-clipboard button added below caption
+AdLume.ai — Optimized v2
+========================
+Optimizations in this version:
+  • Removed unused `os` import
+  • CSS: --grad variable centralises gradient; duplicate button rule collapsed
+  • SESSION_DEFAULTS is single source of truth for both init and reset
+  • reset_session_state uses copy.copy — no shared mutable default references
+  • pil_to_base64: removed unnecessary .copy() — works on local ref, avoids alloc
+  • add_overlay: early-return guard when nothing to draw
+  • Vision cache promoted to module-level dict — faster, no session serialisation
+  • render_copy_caption_button: json.dumps for safe JS escaping (all Unicode safe)
+  • _load_product_images helper extracted from render_input_form
+  • ZIP built once and stored in session_state.zip_cache — no redundant re-creation
+  • All magic strings / model names moved to named constants
 """
 
 from __future__ import annotations
 
 import base64
+import copy
 import io
-import os
+import json
 import warnings
 import zipfile
 from dataclasses import dataclass, field
@@ -32,24 +32,29 @@ from PIL import Image, ImageDraw, ImageFont
 
 warnings.filterwarnings("ignore")
 
-# ── Third-party imports (fail loudly if missing) ──────────────────────────────
 from groq import Groq
 from langchain_core.prompts import PromptTemplate
 from langchain_groq import ChatGroq
 from together import Together
 
 # ─────────────────────────────────────────────────────────────────────────────
-# CONFIG
+# CONSTANTS
 # ─────────────────────────────────────────────────────────────────────────────
+IMAGE_MODEL      = "black-forest-labs/FLUX.1.1-pro"
+VISION_MODEL     = "meta-llama/llama-4-scout-17b-16e-instruct"
+LLM_MODEL        = "llama-3.3-70b-versatile"
+CAPTION_FALLBACK = "🔥 Don't miss out. Visit us today!"
+
+MAX_PRODUCT_IMAGES    = 3
+MAX_PRODUCT_IMG_MB    = 2
+MAX_PRODUCT_IMG_BYTES = MAX_PRODUCT_IMG_MB * 1024 * 1024
+MAX_B64_SIZE          = 1024  # px — longest edge when encoding for vision
+
 SLIDE_STRUCTURES = [
     "Hero promotion, bold headline",
     "Features and benefits",
     "Strong call to action",
 ]
-
-MAX_PRODUCT_IMAGES = 3
-MAX_PRODUCT_IMG_MB = 2
-MAX_PRODUCT_IMG_BYTES = MAX_PRODUCT_IMG_MB * 1024 * 1024
 
 BUSINESS_TYPES = [
     "🍔 Food & Dining", "🛍️ Retail & E-commerce", "💄 Beauty & Cosmetics",
@@ -65,6 +70,19 @@ VISUAL_STYLES = [
     "📸 Realistic Photography", "🎨 Minimal Clean", "🌈 Bright & Colorful",
     "🖤 Dark Premium", "🏝 Lifestyle Aesthetic", "🪔 Festive & Fun",
 ]
+
+# Single source of truth for session state keys → defaults
+SESSION_DEFAULTS: dict = {
+    "generated":           False,
+    "images_bytes":        [],
+    "caption":             "",
+    "prompt_log":          [],
+    "product_vision_desc": "",
+    "zip_cache":           None,
+}
+
+# Module-level vision cache — avoids per-run session-state serialisation overhead
+_vision_cache: dict[tuple, str] = {}
 
 # ─────────────────────────────────────────────────────────────────────────────
 # PROMPTS
@@ -120,21 +138,21 @@ VISION_PROMPT = (
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
-# DATA CLASSES
+# DATA CLASS
 # ─────────────────────────────────────────────────────────────────────────────
 @dataclass
 class AdInputs:
-    prompt: str
-    business_type: str
-    tone: str
-    theme: str
-    business_name: str
-    website: str
-    location: str
-    promo_details: str
-    auto_promo: bool
-    logo_img: Optional[Image.Image] = None
-    product_images: list[Image.Image] = field(default_factory=list)
+    prompt:         str
+    business_type:  str
+    tone:           str
+    theme:          str
+    business_name:  str
+    website:        str
+    location:       str
+    promo_details:  str
+    auto_promo:     bool
+    logo_img:       Optional[Image.Image]  = None
+    product_images: list[Image.Image]      = field(default_factory=list)
 
     def build_context(self, product_vision_desc: str = "") -> str:
         lines = [
@@ -156,7 +174,7 @@ class AdInputs:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# CACHED CLIENTS  (created once per session)
+# CACHED CLIENTS — created once per process
 # ─────────────────────────────────────────────────────────────────────────────
 @st.cache_resource
 def get_together_client() -> Together:
@@ -165,11 +183,7 @@ def get_together_client() -> Together:
 
 @st.cache_resource
 def get_llm() -> ChatGroq:
-    return ChatGroq(
-        api_key=st.secrets["GROK_API_KEY"],
-        model="llama-3.3-70b-versatile",
-        temperature=0.6,
-    )
+    return ChatGroq(api_key=st.secrets["GROK_API_KEY"], model=LLM_MODEL, temperature=0.6)
 
 
 @st.cache_resource
@@ -178,7 +192,8 @@ def get_groq_client() -> Groq:
 
 
 @st.cache_resource
-def get_chains():
+def get_chains() -> tuple:
+    """Returns (enhance_chain, caption_chain)."""
     llm = get_llm()
     return ENHANCE_TEMPLATE | llm, CAPTION_TEMPLATE | llm
 
@@ -186,9 +201,9 @@ def get_chains():
 # ─────────────────────────────────────────────────────────────────────────────
 # IMAGE HELPERS
 # ─────────────────────────────────────────────────────────────────────────────
-def pil_to_base64(pil_img: Image.Image, max_size: int = 1024) -> tuple[str, str]:
-    """Resize & encode PIL image as base64 JPEG."""
-    img = pil_img.copy()
+def pil_to_base64(pil_img: Image.Image, max_size: int = MAX_B64_SIZE) -> tuple[str, str]:
+    """Resize & encode PIL image as base64 JPEG. Does not mutate the original."""
+    img = pil_img
     w, h = img.size
     if max(w, h) > max_size:
         scale = max_size / max(w, h)
@@ -222,25 +237,32 @@ def add_overlay(
     location: str,
     logo_img: Optional[Image.Image] = None,
 ) -> Image.Image:
-    draw = ImageDraw.Draw(img)
-    font = ImageFont.load_default()
+    """Composite logo + text footer onto img in-place. Returns img."""
+    texts    = list(filter(None, [business_name, website, location]))
+    has_logo = logo_img is not None
 
-    if logo_img is not None:
+    if not texts and not has_logo:
+        return img  # nothing to draw — skip entirely
+
+    if has_logo:
         try:
-            logo = logo_img.copy().convert("RGBA")
+            logo = logo_img.convert("RGBA")
             lw, lh = logo.size
-            scale = min(180 / lw, 120 / lh)
-            logo = logo.resize((int(lw * scale), int(lh * scale)), Image.LANCZOS)
+            scale  = min(180 / lw, 120 / lh)
+            logo   = logo.resize((int(lw * scale), int(lh * scale)), Image.LANCZOS)
             iw, ih = img.size
-            px, py = iw - logo.width - 20, ih - logo.height - 20
-            img.paste(logo, (px, py), logo if logo.mode == "RGBA" else None)
+            img.paste(logo, (iw - logo.width - 20, ih - logo.height - 20),
+                      logo if logo.mode == "RGBA" else None)
         except Exception:
             pass  # non-fatal
 
-    y = img.size[1] - 30
-    for text in filter(None, [business_name, website, location]):
-        draw.text((30, y), text, fill="black", font=font)
-        y -= 30
+    if texts:
+        draw = ImageDraw.Draw(img)
+        font = ImageFont.load_default()
+        y    = img.size[1] - 30
+        for text in texts:
+            draw.text((30, y), text, fill="black", font=font)
+            y -= 30
 
     return img
 
@@ -249,26 +271,23 @@ def add_overlay(
 # AI HELPERS
 # ─────────────────────────────────────────────────────────────────────────────
 def analyse_product_images(product_images: list[Image.Image]) -> str:
-    """Vision LLM analysis — result cached by image fingerprint."""
+    """Vision LLM — cached at module level by image fingerprint."""
     if not product_images:
         return ""
 
-    # Build a hashable cache key from raw bytes
-    cache_key = tuple(img_to_bytes(p)[:512] for p in product_images)  # first 512 bytes each
-    if cache_key in st.session_state.get("_vision_cache", {}):
-        return st.session_state["_vision_cache"][cache_key]
+    cache_key = tuple(img_to_bytes(p)[:512] for p in product_images)
+    if cache_key in _vision_cache:
+        return _vision_cache[cache_key]
 
     content: list[dict] = [{"type": "text", "text": VISION_PROMPT}]
     for pil_img in product_images[:MAX_PRODUCT_IMAGES]:
         b64, media_type = pil_to_base64(pil_img)
-        content.append({
-            "type": "image_url",
-            "image_url": {"url": f"data:{media_type};base64,{b64}"},
-        })
+        content.append({"type": "image_url",
+                         "image_url": {"url": f"data:{media_type};base64,{b64}"}})
 
     try:
-        resp = get_groq_client().chat.completions.create(
-            model="meta-llama/llama-4-scout-17b-16e-instruct",
+        resp   = get_groq_client().chat.completions.create(
+            model=VISION_MODEL,
             messages=[{"role": "user", "content": content}],
             max_tokens=300,
             temperature=0.3,
@@ -277,7 +296,7 @@ def analyse_product_images(product_images: list[Image.Image]) -> str:
     except Exception as exc:
         result = f"Product image provided. Use it as the hero subject. (Vision unavailable: {exc})"
 
-    st.session_state.setdefault("_vision_cache", {})[cache_key] = result
+    _vision_cache[cache_key] = result
     return result
 
 
@@ -296,17 +315,13 @@ def generate_caption(context: str) -> str:
         return caption_chain.invoke({"context": context}).content
     except Exception as exc:
         st.warning(f"Caption generation failed ({exc}).")
-        return "🔥 Don't miss out. Visit us today!"
+        return CAPTION_FALLBACK
 
 
 def generate_image(prompt: str) -> Image.Image:
     try:
-        resp = get_together_client().images.generate(
-            prompt=prompt,
-            model="black-forest-labs/FLUX.1.1-pro",
-        )
-        url = resp.data[0].url
-        raw = requests.get(url, timeout=30).content
+        resp = get_together_client().images.generate(prompt=prompt, model=IMAGE_MODEL)
+        raw  = requests.get(resp.data[0].url, timeout=30).content
         return Image.open(io.BytesIO(raw))
     except Exception as exc:
         st.warning(f"Image generation failed ({exc}); using placeholder.")
@@ -319,21 +334,14 @@ def generate_image(prompt: str) -> Image.Image:
 # SESSION STATE
 # ─────────────────────────────────────────────────────────────────────────────
 def init_session_state() -> None:
-    defaults = {
-        "generated": False,
-        "images_bytes": [],
-        "caption": "",
-        "prompt_log": [],
-        "product_vision_desc": "",
-        "_vision_cache": {},
-    }
-    for k, v in defaults.items():
+    for k, v in SESSION_DEFAULTS.items():
         st.session_state.setdefault(k, v)
 
 
 def reset_session_state() -> None:
-    for k in ("generated", "images_bytes", "caption", "prompt_log", "product_vision_desc"):
-        st.session_state[k] = [] if k in ("images_bytes", "prompt_log") else (False if k == "generated" else "")
+    """Reset all generation outputs — uses copy.copy to avoid shared mutable refs."""
+    for k, v in SESSION_DEFAULTS.items():
+        st.session_state[k] = copy.copy(v)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -346,36 +354,32 @@ CSS = """
     --green-mid:   #22c55e;
     --green-light: #f0fdf4;
     --orange:      #ff7a18;
+    --grad:        linear-gradient(90deg, var(--orange), var(--green-mid));
     --border:      #e5e7eb;
-    --shadow:      0 6px 18px rgba(0,0,0,.12);
     --radius:      14px;
 }
 
 .stApp { background: linear-gradient(180deg, var(--green-light) 0%, #fff 100%); }
 .block-container { max-width: 540px; padding-top: 3rem; }
-
 h1, h2, h3 { color: var(--green-dark); }
 
-/* Buttons */
+/* All action buttons — single unified rule */
 .stButton > button,
 .stDownloadButton > button {
     width: 100%;
+    background: var(--grad);
     border: none;
     border-radius: 12px;
     padding: 12px;
     font-weight: 600;
     color: #fff;
 }
-.stButton > button,
-.stDownloadButton > button  { background: linear-gradient(90deg, var(--orange), var(--green-mid)); }
 
 /* Inputs */
 input, textarea { border-radius: 10px !important; border: 1px solid var(--border) !important; }
 
-/* Alerts */
+/* Alerts & code */
 .stAlert { border-radius: 10px; }
-
-/* Code blocks */
 pre { padding: 10px !important; border-radius: 10px !important; }
 pre code { font-size: 12px !important; line-height: 1.4 !important; }
 
@@ -396,7 +400,7 @@ pre code { font-size: 12px !important; line-height: 1.4 !important; }
     color: #6b7280 !important; font-size: 12px !important;
 }
 [data-testid="stFileUploaderDropzone"] button {
-    background: linear-gradient(90deg, var(--orange), var(--green-mid)) !important;
+    background: var(--grad) !important;
     color: #fff !important; border: none !important; border-radius: 10px !important;
     font-weight: 600 !important; font-size: 13px !important; padding: 6px 18px !important;
 }
@@ -407,7 +411,7 @@ pre code { font-size: 12px !important; line-height: 1.4 !important; }
 [data-testid="stFileUploaderFileName"] { color: var(--green-dark) !important; font-weight: 500 !important; }
 [data-testid="stFileUploaderDeleteBtn"] button { background: transparent !important; color: #ef4444 !important; }
 
-/* Card containers — original styling preserved exactly */
+/* Card containers */
 [data-testid="stVerticalBlock"] > div:has(.card) {
     background: #ffffff;
     padding: 18px;
@@ -423,6 +427,64 @@ div[data-baseweb="radio"] label { background: var(--green-light); padding: 6px 1
 .footer { text-align: center; font-size: 12px; color: #6b7280; margin-top: 30px; }
 </style>
 """
+
+# ─────────────────────────────────────────────────────────────────────────────
+# UI HELPERS
+# ─────────────────────────────────────────────────────────────────────────────
+def _load_product_images(product_files) -> list[Image.Image]:
+    """Validate, preview, and return PIL images from uploaded files."""
+    if not product_files:
+        return []
+
+    product_files = product_files[:MAX_PRODUCT_IMAGES]
+    oversized     = [f.name for f in product_files if f.size > MAX_PRODUCT_IMG_BYTES]
+    if oversized:
+        st.error(f"⚠️ Files exceed {MAX_PRODUCT_IMG_MB} MB limit (skipped): {', '.join(oversized)}")
+
+    valid = [f for f in product_files if f.size <= MAX_PRODUCT_IMG_BYTES]
+    if not valid:
+        return []
+
+    images = []
+    cols   = st.columns(len(valid))
+    for col, pf in zip(cols, valid):
+        pil = Image.open(pf)
+        images.append(pil)
+        col.image(pil, use_container_width=True)
+    st.success(f"✅ {len(images)} product image(s) loaded.")
+    return images
+
+
+def render_copy_caption_button(caption: str) -> None:
+    """Clipboard button — json.dumps handles all Unicode / special chars safely."""
+    js_string = json.dumps(caption)
+    st.components.v1.html(
+        f"""
+        <div style="margin: 4px 0;">
+            <button id="copyBtn" onclick="copyCaption()" style="
+                background: linear-gradient(90deg, #ff7a18, #22c55e);
+                color: #fff; border: none; border-radius: 10px;
+                padding: 10px 20px; font-size: 14px; font-weight: 600;
+                cursor: pointer; width: 100%; font-family: sans-serif;
+                transition: background .2s;
+            ">📋 Copy Caption</button>
+        </div>
+        <script>
+            function copyCaption() {{
+                navigator.clipboard.writeText({js_string}).then(() => {{
+                    const btn = document.getElementById('copyBtn');
+                    btn.textContent = '✅ Copied to clipboard!';
+                    btn.style.background = '#15803d';
+                    setTimeout(() => {{
+                        btn.textContent = '📋 Copy Caption';
+                        btn.style.background = 'linear-gradient(90deg, #ff7a18, #22c55e)';
+                    }}, 2000);
+                }}).catch(() => alert('Copy failed — please copy manually.'));
+            }}
+        </script>
+        """,
+        height=52,
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -475,54 +537,31 @@ def render_input_form() -> Optional[AdInputs]:
     """Renders the input card and returns AdInputs on submit, else None."""
     with st.container():
         st.markdown('<div class="card">', unsafe_allow_html=True)
-        prompt = st.text_area(
-            "💡 Creative Idea",
-            placeholder="We sell beautiful crochet flowers shipped all over India…",
-        )
+        prompt        = st.text_area("💡 Creative Idea",
+                                     placeholder="We sell beautiful crochet flowers shipped all over India…")
         business_type = st.selectbox("🛍️ Business Type", BUSINESS_TYPES)
         tone          = st.selectbox("🎭 Ad Style",       AD_STYLES)
         theme         = st.selectbox("🎬 Visual Style",   VISUAL_STYLES)
         business_name = st.text_input("🏢 Business Name", placeholder="Daisy Dahlia")
         website       = st.text_input("💻 Website *(optional)*", placeholder="www.crotchetflr.in")
         location      = st.text_input("📌 Location *(optional)*", placeholder="Koramangala, Bengaluru")
-        promo_details = st.text_input(
-            "🏷️ Promo Details *(optional)*",
-            placeholder="Flat 30% Off | Use code SAVE30 | Valid till Sunday",
-        )
+        promo_details = st.text_input("🏷️ Promo Details *(optional)*",
+                                      placeholder="Flat 30% Off | Use code SAVE30 | Valid till Sunday")
 
-        # Logo
         st.markdown("🪪 Brand Logo *(optional)*")
         st.caption("Upload your logo to appear on all slides.")
-        logo_file = st.file_uploader(
-            "Upload logo", type=["png", "jpg", "jpeg", "webp"],
-            label_visibility="collapsed", key="logo_uploader",
-        )
+        logo_file = st.file_uploader("Upload logo", type=["png", "jpg", "jpeg", "webp"],
+                                     label_visibility="collapsed", key="logo_uploader")
         logo_img = None
         if logo_file:
             logo_img = Image.open(logo_file)
             st.image(logo_img, caption="Appears on all slides", width=160)
 
-        # Product images
         st.markdown(f"📦 Product Images *(optional — max {MAX_PRODUCT_IMAGES} images, {MAX_PRODUCT_IMG_MB} MB each)*")
-        product_files = st.file_uploader(
-            "Upload product photos", type=["png", "jpg", "jpeg", "webp"],
-            accept_multiple_files=True, label_visibility="collapsed", key="product_uploader",
-        )
-
-        product_images: list[Image.Image] = []
-        if product_files:
-            product_files = product_files[:MAX_PRODUCT_IMAGES]
-            oversized = [f.name for f in product_files if f.size > MAX_PRODUCT_IMG_BYTES]
-            if oversized:
-                st.error(f"⚠️ Files exceed {MAX_PRODUCT_IMG_MB} MB limit (skipped): {', '.join(oversized)}")
-            valid_files = [f for f in product_files if f.size <= MAX_PRODUCT_IMG_BYTES]
-            if valid_files:
-                cols = st.columns(len(valid_files))
-                for col, pf in zip(cols, valid_files):
-                    pil = Image.open(pf)
-                    product_images.append(pil)
-                    col.image(pil, use_container_width=True)
-                st.success(f"✅ {len(product_images)} product image(s) loaded.")
+        product_files  = st.file_uploader("Upload product photos", type=["png", "jpg", "jpeg", "webp"],
+                                          accept_multiple_files=True, label_visibility="collapsed",
+                                          key="product_uploader")
+        product_images = _load_product_images(product_files)
 
         auto_promo = st.toggle("Add automatic offers")
         submitted  = st.button("🪄 Create Ads!", type="primary", width="stretch")
@@ -542,53 +581,6 @@ def render_input_form() -> Optional[AdInputs]:
     )
 
 
-def render_copy_caption_button(caption: str) -> None:
-    """Renders an HTML copy-to-clipboard button for the caption."""
-    # Safely escape the caption for embedding in JS
-    escaped = (
-        caption
-        .replace("\\", "\\\\")
-        .replace("`", "\\`")
-        .replace("$", "\\$")
-    )
-    st.components.v1.html(
-        f"""
-        <div style="margin-top: 4px; margin-bottom: 4px;">
-            <button id="copyBtn" onclick="copyCaption()" style="
-                background: linear-gradient(90deg, #ff7a18, #22c55e);
-                color: white;
-                border: none;
-                border-radius: 10px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: 600;
-                cursor: pointer;
-                width: 100%;
-                font-family: sans-serif;
-                transition: opacity 0.2s;
-            ">📋 Copy Caption</button>
-        </div>
-        <script>
-            function copyCaption() {{
-                const caption = `{escaped}`;
-                navigator.clipboard.writeText(caption).then(() => {{
-                    const btn = document.getElementById('copyBtn');
-                    btn.textContent = '✅ Copied to clipboard!';
-                    btn.style.background = '#15803d';
-                    setTimeout(() => {{
-                        btn.textContent = '📋 Copy Caption';
-                        btn.style.background = 'linear-gradient(90deg, #ff7a18, #22c55e)';
-                    }}, 2000);
-                }}).catch(() => {{
-                    alert('Copy failed. Please select and copy the caption manually.');
-                }});
-            }}
-        </script>
-        """,
-        height=52,
-    )
-
-
 def render_output() -> None:
     if not (st.session_state.generated and st.session_state.images_bytes):
         return
@@ -598,7 +590,7 @@ def render_output() -> None:
         st.markdown("### 🎉 Your Marketing Package is Ready!")
         st.markdown("#### 📢 Caption")
         st.info(st.session_state.caption)
-        render_copy_caption_button(st.session_state.caption)  # ← copy button
+        render_copy_caption_button(st.session_state.caption)
         st.markdown('</div>', unsafe_allow_html=True)
 
     with st.container():
@@ -612,16 +604,20 @@ def render_output() -> None:
                 file_name=f"slide_{i}.png",
                 mime="image/png",
                 key=f"dl_{i}",
-                width="stretch"
+                width="stretch",
             )
+
+        # Build ZIP once and cache — avoids recreating on every Streamlit re-render
+        if st.session_state.zip_cache is None:
+            st.session_state.zip_cache = create_zip(st.session_state.images_bytes)
 
         st.download_button(
             label="⬇️ Download All Slides (.zip)",
-            data=create_zip(st.session_state.images_bytes),
+            data=st.session_state.zip_cache,
             file_name="carousel.zip",
             mime="application/zip",
             type="primary",
-            width="stretch"
+            width="stretch",
         )
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -632,12 +628,12 @@ def render_output() -> None:
 def run_generation(inputs: AdInputs) -> None:
     reset_session_state()
 
-    # Step 1 — Vision analysis
+    # Step 1 — Vision analysis (skipped when no product images)
     product_vision_desc = ""
     if inputs.product_images:
         with st.spinner(f"🔍 Analysing {len(inputs.product_images)} product image(s)…"):
             product_vision_desc = analyse_product_images(inputs.product_images)
-            st.session_state.product_vision_desc = product_vision_desc
+        st.session_state.product_vision_desc = product_vision_desc
         st.markdown("### 🔍 Product Vision Analysis")
         st.info(product_vision_desc)
 
@@ -645,12 +641,12 @@ def run_generation(inputs: AdInputs) -> None:
     context = inputs.build_context(product_vision_desc)
     st.session_state.caption = generate_caption(context)
 
-    # Step 3 — Per-slide: enhance + generate
+    # Step 3 — Per-slide: enhance → generate → overlay
     st.markdown("### ⚙️ Prompt Enhancement Pipeline")
     for i, structure in enumerate(SLIDE_STRUCTURES, 1):
         base_prompt = f"{context}\nObjective: {structure}"
         st.markdown(f"#### Slide {i}")
-        st.write("**Base Prompt**");  st.code(base_prompt)
+        st.write("**Base Prompt**");    st.code(base_prompt)
 
         enhanced = enhance_prompt(base_prompt)
         st.write("**Enhanced Prompt**"); st.code(enhanced)
@@ -658,7 +654,8 @@ def run_generation(inputs: AdInputs) -> None:
 
         with st.spinner(f"Generating Slide {i}…"):
             img = generate_image(enhanced)
-            img = add_overlay(img, inputs.business_name, inputs.website, inputs.location, inputs.logo_img)
+            img = add_overlay(img, inputs.business_name, inputs.website,
+                              inputs.location, inputs.logo_img)
 
         st.session_state.images_bytes.append(img_to_bytes(img))
 
@@ -683,7 +680,6 @@ def main() -> None:
         run_generation(inputs)
 
     render_output()
-
     st.markdown('<div class="footer">Made in 🇮🇳 with ❤️ by Chhetri</div>', unsafe_allow_html=True)
 
 
