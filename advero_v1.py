@@ -558,7 +558,7 @@ with st.container():
                 pil = Image.open(pf)
                 product_images.append(pil)
                 col.image(pil, use_container_width=True)
-            st.success(f"✅ {len(product_images)} product image(s) loaded — AI will analyse before generating ads.")
+            st.success(f"✅ {len(product_images)} product image(s) loaded: AI will analyse before generating ads.")
 
     promo = st.toggle("Add automatic offers")
     generate = st.button("🪄 Create Ads!", type="primary", width="stretch")
