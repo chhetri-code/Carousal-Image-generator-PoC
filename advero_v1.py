@@ -168,11 +168,11 @@ Context:
 """)
 
 # ---------------- IMAGE CLIENT ----------------
-client = Together(api_key=st.secret["TOGETHER_API_KEY"])
+client = Together(api_key=st.secrets["TOGETHER_API_KEY"])
 
 # ---------------- LLM ----------------
 llm = ChatGroq(
-    api_key=st.secret["GROK_API_KEY"],
+    api_key=st.secrets["GROK_API_KEY"],
     model="llama-3.3-70b-versatile",
     temperature=0.6
 )
