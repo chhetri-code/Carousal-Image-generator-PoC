@@ -16,9 +16,9 @@ from langchain_core.prompts import PromptTemplate
 from together import Together
 from groq import Groq
 
-from dotenv import load_dotenv
 
-load_dotenv()
+
+
 
 # ---------------- CONFIG ----------------
 st.set_page_config(page_title="AdLume.ai", layout="centered")
@@ -265,17 +265,17 @@ Context:
 """)
 
 # ---------------- IMAGE CLIENT ----------------
-client = Together(api_key=os.getenv("TOGETHER_API_KEY"))
+client = Together(api_key=st.secrets["TOGETHER_API_KEY"])
 
 # ---------------- LLM ----------------
 llm = ChatGroq(
-    api_key=os.getenv("GROK_API_KEY"),
+    api_key=st.secrets["GROK_API_KEY"],
     model="llama-3.3-70b-versatile",
     temperature=0.6
 )
 
 # Vision-capable Groq client for product image analysis
-groq_client = Groq(api_key=os.getenv("GROK_API_KEY"))
+groq_client = Groq(api_key=st.secrets["GROK_API_KEY"])
 
 enhance_chain = enhance_template | llm
 caption_chain = caption_template | llm
