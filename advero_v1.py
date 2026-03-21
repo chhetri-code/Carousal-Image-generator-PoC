@@ -233,7 +233,7 @@ Output ONLY the prompt — no labels, no JSON, no explanation.
 
 Structure your prompt in this exact order:
 
-1. SHOT: Experiment with Camera angle and framing — e.g. "Eye-level close-up", "45-degree overhead flat-lay", "Wide lifestyle shot", etc. 
+1. SHOT: Experiment with Camera angle and framing like a ad director - Examples: "Wide lifestyle shot", etc. 
 2. SUBJECT: One hero element only — the product, dish, person, or scene. Be specific: colour, texture, size.
 3. LIGHTING: Source and quality — e.g. "soft diffused window light", "warm golden-hour rim light", "sharp studio softbox from left"
 4. BACKGROUND: Simple and complementary. Shallow depth of field — background blurred, subject sharp.
