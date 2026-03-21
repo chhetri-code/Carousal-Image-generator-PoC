@@ -1,14 +1,14 @@
 """
-AdLume.ai — Optimized v2
+AdLume.ai — Optimized v3
 ========================
 Optimizations in this version:
   • Removed unused `os` import
   • CSS: --grad variable centralises gradient; duplicate button rule collapsed
   • SESSION_DEFAULTS is single source of truth for both init and reset
-  • reset_session_state uses copy.copy — no shared mutable default references
-  • pil_to_base64: removed unnecessary .copy() — works on local ref, avoids alloc
+  • reset_session_state uses copy.copy - no shared mutable default references
+  • pil_to_base64: removed unnecessary .copy() - works on local ref, avoids alloc
   • add_overlay: early-return guard when nothing to draw
-  • Vision cache promoted to module-level dict — faster, no session serialisation
+  • Vision cache promoted to module-level dict - faster, no session serialisation
   • render_copy_caption_button: json.dumps for safe JS escaping (all Unicode safe)
   • _load_product_images helper extracted from render_input_form
   • ZIP built once and stored in session_state.zip_cache — no redundant re-creation
@@ -48,7 +48,7 @@ CAPTION_FALLBACK = "🔥 Don't miss out. Visit us today!"
 MAX_PRODUCT_IMAGES    = 3
 MAX_PRODUCT_IMG_MB    = 2
 MAX_PRODUCT_IMG_BYTES = MAX_PRODUCT_IMG_MB * 1024 * 1024
-MAX_B64_SIZE          = 1024  # px — longest edge when encoding for vision
+MAX_B64_SIZE          = 1024  # px - longest edge when encoding for vision
 
 SLIDE_STRUCTURES = [
     "Hero promotion, bold headline",
@@ -81,7 +81,7 @@ SESSION_DEFAULTS: dict = {
     "zip_cache":           None,
 }
 
-# Module-level vision cache — avoids per-run session-state serialisation overhead
+# Module-level vision cache - avoids per-run session-state serialisation overhead
 _vision_cache: dict[tuple, str] = {}
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -91,13 +91,13 @@ ENHANCE_TEMPLATE = PromptTemplate.from_template("""
 You are a prompt engineer specialising in AI image generation for commercial Instagram ads.
 
 Convert the brief below into ONE image generation prompt for FLUX.1.1-pro.
-Output ONLY the prompt — no labels, no JSON, no explanation.
+Output ONLY the prompt - no labels, no JSON, no explanation.
 
 Structure your prompt in this exact order:
-1. SHOT: Camera angle and framing — e.g. "Wide lifestyle shot"
-2. SUBJECT: One hero element only — product, dish, person, or scene. Be specific.
-3. LIGHTING: Source and quality — e.g. "soft diffused window light"
-4. BACKGROUND: Simple and complementary. Shallow depth of field — background blurred.
+1. SHOT: Camera angle and framing - e.g. "Wide lifestyle shot"
+2. SUBJECT: One hero element only - product, dish, person, or scene. Be specific.
+3. LIGHTING: Source and quality - e.g. "soft diffused window light"
+4. BACKGROUND: Simple and complementary. Shallow depth of field - background blurred.
 5. MOOD & PALETTE: Match the visual style and tone from the brief exactly.
 6. TEXT: Exactly ONE headline (max 5 words) and ONE CTA (max 3 words) as large, bold,
    modern sans-serif in natural negative space. Spell every word correctly.
@@ -106,7 +106,7 @@ Structure your prompt in this exact order:
 
 Constraints:
 - Maximum 2 text elements (headline + CTA). No subtext, no body copy.
-- No more than 3 visual elements — hero subject, background, and text only.
+- No more than 3 visual elements - hero subject, background, and text only.
 - If Promo Details are present, use the exact promo wording as the headline.
 - Typography must be clean, high contrast, legible.
 - Leave space for additional text overlay.
@@ -172,31 +172,26 @@ class AdInputs:
             lines.append(f"\nProduct Visual Description (from uploaded images):\n{product_vision_desc}")
         return "\n".join(lines)
 
-
 # ─────────────────────────────────────────────────────────────────────────────
-# CACHED CLIENTS — created once per process
+# CACHED CLIENTS - created once per process
 # ─────────────────────────────────────────────────────────────────────────────
 @st.cache_resource
 def get_together_client() -> Together:
     return Together(api_key=st.secrets["TOGETHER_API_KEY"])
 
-
 @st.cache_resource
 def get_llm() -> ChatGroq:
     return ChatGroq(api_key=st.secrets["GROK_API_KEY"], model=LLM_MODEL, temperature=0.6)
 
-
 @st.cache_resource
 def get_groq_client() -> Groq:
     return Groq(api_key=st.secrets["GROK_API_KEY"])
-
 
 @st.cache_resource
 def get_chains() -> tuple:
     """Returns (enhance_chain, caption_chain)."""
     llm = get_llm()
     return ENHANCE_TEMPLATE | llm, CAPTION_TEMPLATE | llm
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # IMAGE HELPERS
@@ -214,12 +209,10 @@ def pil_to_base64(pil_img: Image.Image, max_size: int = MAX_B64_SIZE) -> tuple[s
     img.save(buf, format="JPEG", quality=85)
     return base64.b64encode(buf.getvalue()).decode(), "image/jpeg"
 
-
 def img_to_bytes(img: Image.Image) -> bytes:
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     return buf.getvalue()
-
 
 def create_zip(image_bytes_list: list[bytes]) -> io.BytesIO:
     buf = io.BytesIO()
@@ -228,7 +221,6 @@ def create_zip(image_bytes_list: list[bytes]) -> io.BytesIO:
             zf.writestr(f"slide_{i}.png", data)
     buf.seek(0)
     return buf
-
 
 def add_overlay(
     img: Image.Image,
@@ -266,7 +258,6 @@ def add_overlay(
 
     return img
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # AI HELPERS
 # ─────────────────────────────────────────────────────────────────────────────
@@ -284,7 +275,6 @@ def analyse_product_images(product_images: list[Image.Image]) -> str:
         b64, media_type = pil_to_base64(pil_img)
         content.append({"type": "image_url",
                          "image_url": {"url": f"data:{media_type};base64,{b64}"}})
-
     try:
         resp   = get_groq_client().chat.completions.create(
             model=VISION_MODEL,
@@ -299,7 +289,6 @@ def analyse_product_images(product_images: list[Image.Image]) -> str:
     _vision_cache[cache_key] = result
     return result
 
-
 def enhance_prompt(base_prompt: str) -> str:
     enhance_chain, _ = get_chains()
     try:
@@ -308,7 +297,6 @@ def enhance_prompt(base_prompt: str) -> str:
         st.warning(f"Prompt enhancement failed ({exc}); using base prompt.")
         return base_prompt
 
-
 def generate_caption(context: str) -> str:
     _, caption_chain = get_chains()
     try:
@@ -316,7 +304,6 @@ def generate_caption(context: str) -> str:
     except Exception as exc:
         st.warning(f"Caption generation failed ({exc}).")
         return CAPTION_FALLBACK
-
 
 def generate_image(prompt: str) -> Image.Image:
     try:
@@ -329,7 +316,6 @@ def generate_image(prompt: str) -> Image.Image:
         ImageDraw.Draw(img).text((50, 600), "Fallback Image", fill="black")
         return img
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # SESSION STATE
 # ─────────────────────────────────────────────────────────────────────────────
@@ -337,12 +323,10 @@ def init_session_state() -> None:
     for k, v in SESSION_DEFAULTS.items():
         st.session_state.setdefault(k, v)
 
-
 def reset_session_state() -> None:
-    """Reset all generation outputs — uses copy.copy to avoid shared mutable refs."""
+    """Reset all generation outputs - uses copy.copy to avoid shared mutable refs."""
     for k, v in SESSION_DEFAULTS.items():
         st.session_state[k] = copy.copy(v)
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CSS
@@ -454,9 +438,8 @@ def _load_product_images(product_files) -> list[Image.Image]:
     st.success(f"✅ {len(images)} product image(s) loaded.")
     return images
 
-
 def render_copy_caption_button(caption: str) -> None:
-    """Clipboard button — json.dumps handles all Unicode / special chars safely."""
+    """Clipboard button - json.dumps handles all Unicode / special chars safely."""
     js_string = json.dumps(caption)
     st.components.v1.html(
         f"""
@@ -486,7 +469,6 @@ def render_copy_caption_button(caption: str) -> None:
         height=52,
     )
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # UI COMPONENTS
 # ─────────────────────────────────────────────────────────────────────────────
@@ -503,10 +485,10 @@ def render_sidebar() -> None:
             st.write("""
 AdLume.ai turns simple ideas into **scroll-stopping Instagram ads**.
 
-🎯 **Built for:** Founders, small businesses, marketers & creators.
+🎯 **Built for all:** Founders, small businesses, marketers & creators.
 
 ⚡ **What you get:**
-- Idea → ad in seconds
+- Idea to ad in seconds
 - Smart prompt enhancement
 - High-quality, realistic creatives
 - Faster content, better conversions
@@ -514,9 +496,9 @@ AdLume.ai turns simple ideas into **scroll-stopping Instagram ads**.
 
         with st.expander("💰 Pricing"):
             st.write("""
-🔰 **Free** — Limited daily generations, core features.
+🔰 **Free** - Limited daily generations, core features.
 
-👑 **Pro** — 30+ generations, advanced optimisation, premium styles, priority support.
+👑 **Pro** - 30+ generations, advanced optimisation, premium styles, priority support.
 """)
             st.info("Coming Soon 🚧")
             st.button("🚀 Unlock Pro", use_container_width=True)
@@ -531,7 +513,6 @@ Focus: AI × creativity · Data science · Digital products
 
         st.markdown("---")
         st.caption("Made in 🇮🇳 with ❤️ by Chhetri")
-
 
 def render_input_form() -> Optional[AdInputs]:
     """Renders the input card and returns AdInputs on submit, else None."""
@@ -557,7 +538,7 @@ def render_input_form() -> Optional[AdInputs]:
             logo_img = Image.open(logo_file)
             st.image(logo_img, caption="Appears on all slides", width=160)
 
-        st.markdown(f"📦 Product Images *(optional — max {MAX_PRODUCT_IMAGES} images, {MAX_PRODUCT_IMG_MB} MB each)*")
+        st.markdown(f"📦 Product Images *(optional - max {MAX_PRODUCT_IMAGES} images, {MAX_PRODUCT_IMG_MB} MB each)*")
         product_files  = st.file_uploader("Upload product photos", type=["png", "jpg", "jpeg", "webp"],
                                           accept_multiple_files=True, label_visibility="collapsed",
                                           key="product_uploader")
@@ -580,14 +561,13 @@ def render_input_form() -> Optional[AdInputs]:
         logo_img=logo_img, product_images=product_images,
     )
 
-
 def render_output() -> None:
     if not (st.session_state.generated and st.session_state.images_bytes):
         return
 
     with st.container():
         st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown("### 🎉 Your Marketing Package is Ready!")
+        st.markdown("### 🎉 Your Ad Package is Ready!")
         st.markdown("#### 📢 Caption")
         st.info(st.session_state.caption)
         render_copy_caption_button(st.session_state.caption)
@@ -607,7 +587,7 @@ def render_output() -> None:
                 width="stretch",
             )
 
-        # Build ZIP once and cache — avoids recreating on every Streamlit re-render
+        # Build ZIP once and cache - avoids recreating on every Streamlit re-render
         if st.session_state.zip_cache is None:
             st.session_state.zip_cache = create_zip(st.session_state.images_bytes)
 
@@ -621,14 +601,13 @@ def render_output() -> None:
         )
         st.markdown('</div>', unsafe_allow_html=True)
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # GENERATION PIPELINE
 # ─────────────────────────────────────────────────────────────────────────────
 def run_generation(inputs: AdInputs) -> None:
     reset_session_state()
 
-    # Step 1 — Vision analysis (skipped when no product images)
+    # Step 1 - Vision analysis (skipped when no product images)
     product_vision_desc = ""
     if inputs.product_images:
         with st.spinner(f"🔍 Analysing {len(inputs.product_images)} product image(s)…"):
@@ -637,11 +616,11 @@ def run_generation(inputs: AdInputs) -> None:
         st.markdown("### 🔍 Product Vision Analysis")
         st.info(product_vision_desc)
 
-    # Step 2 — Caption
+    # Step 2 - Caption
     context = inputs.build_context(product_vision_desc)
     st.session_state.caption = generate_caption(context)
 
-    # Step 3 — Per-slide: enhance → generate → overlay
+    # Step 3 - Per-slide: enhance → generate → overlay
     st.markdown("### ⚙️ Prompt Enhancement Pipeline")
     for i, structure in enumerate(SLIDE_STRUCTURES, 1):
         base_prompt = f"{context}\nObjective: {structure}"
@@ -664,7 +643,6 @@ def run_generation(inputs: AdInputs) -> None:
         st.session_state.images_bytes.append(img_to_bytes(img))
 
     st.session_state.generated = True
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # MAIN
