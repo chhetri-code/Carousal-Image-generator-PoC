@@ -228,7 +228,7 @@ st.write("Ready-to-post high-converting Instagram Ads in seconds!")
 enhance_template = PromptTemplate.from_template("""
 You are a prompt engineer specialising in AI image generation for commercial Instagram ads.
 
-Convert the brief below into ONE image generation prompt for FLUX.1.1-pro.
+Convert the brief below into ONE image generation prompt for FLUX.1.1-pro. Utilize colors and themes present in the brief.
 Output ONLY the prompt — no labels, no JSON, no explanation.
 
 Structure your prompt in this exact order:
