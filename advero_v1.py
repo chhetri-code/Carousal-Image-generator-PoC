@@ -366,8 +366,8 @@ h1, h2, h3 { color: var(--green-dark); }
     font-weight: 600;
     color: #fff;
 }
-.stButton > button          { background: linear-gradient(90deg, var(--orange), var(--green-mid)); }
-.stDownloadButton > button  { background: var(--green-mid); }
+.stButton > button,
+.stDownloadButton > button  { background: linear-gradient(90deg, var(--orange), var(--green-mid)); }
 
 /* Inputs */
 input, textarea { border-radius: 10px !important; border: 1px solid var(--border) !important; }
