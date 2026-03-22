@@ -511,7 +511,7 @@ AdLume.ai turns simple ideas into **scroll-stopping Instagram ads**.
             st.info("Coming Soon 🚧")
             st.button("🚀 Unlock Pro", use_container_width=True)
 
-        with st.expander("👤 About the Creator"):
+        with st.expander("👤 Meet the Creator"):
             st.write("""
 Chhetri builds AI tools for **productivity, creativity, and data-driven decisions**.
 
