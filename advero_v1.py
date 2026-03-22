@@ -520,7 +520,7 @@ Chhetri builds AI tools for productivity, creativity, and data-driven decisions.
             st.info("📧 [Email](mailto:chhetri.code@gmail.com)  💼 [LinkedIn](https://www.linkedin.com/in/prashant-kumar-chhetri)")
 
         st.markdown("---")
-        st.caption("Made in 🇮🇳 with ❤️ by :rainbow[CHHETRI]")
+        st.caption("Made in 🇮🇳 with ❤️ by CHHETRI")
 
 def render_input_form() -> Optional[AdInputs]:
     """Renders the input card and returns AdInputs on submit, else None."""
@@ -670,7 +670,7 @@ def main() -> None:
         run_generation(inputs)
 
     render_output()
-    st.markdown('<div class="footer">Made in 🇮🇳 with ❤️ by :rainbow[CHHETRI]</div>', unsafe_allow_html=True)
+    st.markdown('<div class="footer">Made in 🇮🇳 with ❤️ by CHHETRI</div>', unsafe_allow_html=True)
 
 
 if __name__ == "__main__":
