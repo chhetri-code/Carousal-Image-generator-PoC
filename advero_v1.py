@@ -515,7 +515,7 @@ AdLume.ai turns simple ideas into **scroll-stopping Instagram ads**.
             st.write("""
 Chhetri builds AI tools for **productivity, creativity, and data-driven decisions**.
 
-Focus: AI × creativity · Data science · Digital products
+**AI × Creativity · Digital Products · Data Science · Product Management**
 """)
             st.info("📧 [Email](mailto:chhetri.code@gmail.com)  💼 [LinkedIn](https://www.linkedin.com/in/prashant-kumar-chhetri)")
 
